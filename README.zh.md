@@ -2,6 +2,10 @@
 
 这个项目通过油猴脚本（Tampermonkey）在用户浏览器上运行，并将网页版的ChatGPT操作转换为一个API接口。你可以使用这个API来做一些有趣的事情，比如玩[Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT)。
 
+## 更新
+
+2024-05-19: 支持新版本UI和gpt-4 api。
+
 ## 特点
 
 - API 无成本。
@@ -57,9 +61,8 @@
 | 参数        | 描述                                            | 默认值  | 是否必选 |
 |-------------|---------------------------------------------------|--------|----------|
 | messages    | 参考 openai api                       |      | 是       |
-| model       | 参考 openai api                     |  | 否       |
+| model       | 不再支持，请在网页上选择模型                |      |        |
 | stream      | 参考 openai api                        | false  | 否       |
-| newChat     | 是否开启一个新对话                          | true  | 否       |
 
 
 ### 玩 Auto-GPT 例子

@@ -4,6 +4,10 @@
 
 This project runs on users' browsers through the Tampermonkey script and converts the web version of ChatGPT operations into an API interface. You can use this API to do some interesting things, such as playing [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT).
 
+## Update
+
+2024-05-19: Support new version UI and gpt-4o.
+
 ## Features
 - API no cost.
 - If you have a chatgpt plus account, you can use gpt-4 api.
@@ -48,9 +52,8 @@ You now have an API address: http://localhost:8766/v1/chat/completions
 | Parameter   | Description                                      | Default | Required |
 |-------------|--------------------------------------------------|---------|----------|
 | messages    | Refer to OpenAI API documentation                |      | Yes      |
-| model       | Refer to OpenAI API documentation                |      | No       |
+| model       | No longer supported, please select model on the webpage.               |      |        |
 | stream      | Refer to OpenAI API documentation                | false   | No       |
-| newChat     | Whether to start a new conversation              | true    | No       |
 
 #### Example of Request Parameters
 ```json
