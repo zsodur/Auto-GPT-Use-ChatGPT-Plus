@@ -27,7 +27,11 @@ This project runs on users' browsers through the Tampermonkey script and convert
 2. Open Tampermonkey management panel and create a new script.
 3. Copy the contents of `tampermonkey-script.js` file into the newly created script and save it.
 
-### Step 3 Open and Log in to ChatGPT
+### Step 3 Download and Install the Browser Extension Disable Content-Security-Policy
+
+Download from [here](https://chromewebstore.google.com/detail/disable-content-security/ieelmcmcagommplceebfedjlakkhpden)
+
+### Step 4 Open and Log in to ChatGPT
 
 [https://chat.openai.com/](https://chat.openai.com/)
 
@@ -35,7 +39,7 @@ If you see this in the upper right corner of the webpage, you have succeeded !
 
 ![Success Image](./success.png)
 
-### Step 4 Use API
+### Step 5 Use API
 
 You now have an API address: http://localhost:8766/v1/chat/completions
 

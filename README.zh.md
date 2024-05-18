@@ -24,11 +24,15 @@
 2. 打开Tampermonkey管理面板并创建一个新的脚本。
 3. 复制`tampermonkey-script.js`文件的内容到新建的脚本中并保存。
 
-### 第三步 打开并登录ChatGPT
+### 第三步 下载并安装浏览器扩展程序 Disable Content-Security-Policy
+
+从[这里](https://chromewebstore.google.com/detail/disable-content-security/ieelmcmcagommplceebfedjlakkhpden)下载
+
+### 第四步 打开并登录ChatGPT
 
 [https://chat.openai.com/](https://chat.openai.com/)
 
-### 第四步 使用API
+### 第五步 使用API
 
 发送一个POST到API地址 http://localhost:8766/v1/chat/completions
 
