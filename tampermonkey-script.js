@@ -2,11 +2,12 @@
 // @name         ChatGPT API By Browser Script
 // @namespace    http://tampermonkey.net/
 // @version      1
-// @match        https://chat.openai.com/*
+// @match        https://chatgpt.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=openai.com
-// @grant        none
+// @grant        GM_webRequest
 // @license MIT
 // ==/UserScript==
+console.log('starting');
 
 const WS_URL = `ws://localhost:8765`;
 
@@ -39,56 +40,95 @@ class App {
     this.observer = null;
     this.stop = false;
     this.dom = null;
+    this.lastText = null; // Track the last message text
   }
 
   async start({ text, model, newChat }) {
-    this.stop = false
-    if (newChat) {
-      try {
-        const a = document.querySelector('a');
-        a.click();
+    this.stop = false;
+    console.log('Starting to edit or send a message');
+
+    // Check for the edit button
+    const editButton = document.querySelector('button.flex.h-9.w-9.items-center.justify-center.rounded-full.text-token-text-secondary.transition.hover\\:bg-token-main-surface-tertiary');
+    if (editButton) {
+      console.log('Edit button found, clicking it');
+      editButton.click();
+      await sleep(500);
+
+      // Select all text and replace with the new text
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        console.log('Textarea found, replacing text');
+        textarea.value = text;
+        textarea.select();
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+
+        // Adding a small delay before pressing the send button
         await sleep(500);
-        const list = [...document.querySelectorAll('li.group.relative.flex')].map(item=> ({
-          text: getTextFromNode(item),
-          node: item
-        }))
-        if (model === 'gpt-4') {
-          const find = document.querySelectorAll('.truncate.text-sm.font-medium')[1]
-          if(find) {
-            find.click();
-            await sleep(500);
-          }
+
+        // Click the send button to send the edited message
+        const sendButton = document.querySelector('button.btn.relative.btn-primary');
+        if (sendButton) {
+          console.log('Send button found, clicking it');
+          sendButton.click();
         } else {
-          const find = document.querySelectorAll('.truncate.text-sm.font-medium')[0]
-          if(find) {
-            find.click();
-            await sleep(500);
-          }
+          console.log('Error: Send button not found');
         }
-      } catch (e) {
-        console.log(e);
+      } else {
+        console.log('Error: Textarea not found');
+      }
+    } else {
+      console.log('No edit button found, sending a new message');
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        textarea.value = text;
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+        await sleep(500);
+        const sendButton = document.querySelector('button.mb-1.mr-1.flex.h-8.w-8.items-center.justify-center.rounded-full.bg-black.text-white.transition-colors.hover\\:opacity-70.focus-visible\\:outline-none.focus-visible\\:outline-black.disabled\\:bg-\\[\\#D7D7D7\\].disabled\\:text-\\[\\#f4f4f4\\].disabled\\:hover\\:opacity-100.dark\\:bg-white.dark\\:text-black.dark\\:focus-visible\\:outline-white.disabled\\:dark\\:bg-token-text-quaternary.dark\\:disabled\\:text-token-main-surface-secondary');
+        if (sendButton) {
+          console.log('Send button found, clicking it');
+          sendButton.click();
+        } else {
+          console.log('Error: Send button not found');
+        }
+      } else {
+        console.log('Error: Textarea not found');
       }
     }
-    const textarea = document.querySelector('textarea');
-    textarea.value = text;
-    const event = new Event('input', { bubbles: true });
-    textarea.dispatchEvent(event);
-    await sleep(500);
-    const siblingButton = textarea.nextElementSibling;
-    siblingButton.click();
 
     this.observeMutations();
   }
 
-  observeMutations() {
+  async observeMutations() {
+    await sleep(2000); // Initial delay before first checking button state
     this.observer = new MutationObserver(async (mutations) => {
-      const list = [...document.querySelectorAll('div.relative.flex.gap-1')];
+      await sleep(500); // Adding delay to ensure message content is updated
+      const list = [...document.querySelectorAll('div.agent-turn')];
       const last = list[list.length - 1];
-      if (!last) return;
-      const lastText = getTextFromNode(last.querySelector('div.flex.flex-grow.flex-col.gap-3'));
+      if (!last) {
+        console.log('Error: No last message found');
+        return;
+      }
+      const lastText = getTextFromNode(last.querySelector('div[data-message-author-role="assistant"]'));
+      if (!lastText || lastText === this.lastText) {
+        console.log('Error: Last message text not found or unchanged');
+        return;
+      }
+
+      // Check the state of the button to ensure the message is fully loaded
+      const stopButton = document.querySelector('button[aria-label="Stop generating"]');
+      const sendButton = document.querySelector('button.mb-1.mr-1.flex.h-8.w-8.items-center.justify-center.rounded-full.bg-black.text-white.transition-colors.hover\\:opacity-70.focus-visible\\:outline-none.focus-visible\\:outline-black.disabled\\:bg-\\[\\#D7D7D7\\].disabled\\:text-\\[\\#f4f4f4\\].disabled\\:hover\\:opacity-100.dark\\:bg-white.dark\\:text-black.dark\\:focus-visible\\:outline-white.disabled\\:dark\\:bg-token-text-quaternary.dark\\:disabled\\:text-token-main-surface-secondary[disabled]');
+
+      if (stopButton || !sendButton) {
+        console.log('Message not fully loaded yet');
+        return;
+      }
+
+      this.lastText = lastText;
       console.log('send', {
         text: lastText,
-      })
+      });
       this.socket.send(
         JSON.stringify({
           type: 'answer',
@@ -96,16 +136,12 @@ class App {
         })
       );
       await sleep(1000);
-      const button = document.querySelector('.btn-neutral');
-      if(!button) return
-      if (
-        button.querySelector('div').textContent.trim() != 'Stop generating'
-      ) {
-        if(this.stop) return
-        this.stop = true
+      if (!stopButton) {
+        if (this.stop) return;
+        this.stop = true;
         console.log('send', {
           type: 'stop',
-        })
+        });
         this.socket.send(
           JSON.stringify({
             type: 'stop',
@@ -121,6 +157,7 @@ class App {
 
   sendHeartbeat() {
     if (this.socket.readyState === WebSocket.OPEN) {
+      console.log('Sending heartbeat');
       this.socket.send(JSON.stringify({ type: 'heartbeat' }));
     }
   }
@@ -129,25 +166,29 @@ class App {
     this.socket = new WebSocket(WS_URL);
     this.socket.onopen = () => {
       console.log('Server connected, can process requests now.');
-      this.dom.innerHTML = '<div style="color: green; ">API Connected !</div>';
-    }
+      this.dom.innerHTML = '<div style="color: green;">API Connected!</div>';
+    };
     this.socket.onclose = () => {
-      console.log('The server connection has been disconnected, the request cannot be processed.');
-      this.dom.innerHTML = '<div style="color: red; ">API Disconnected !</div>';
+      console.log('Error: The server connection has been disconnected, the request cannot be processed.');
+      this.dom.innerHTML = '<div style="color: red;">API Disconnected!</div>';
 
       setTimeout(() => {
         console.log('Attempting to reconnect...');
         this.connect();
       }, 2000);
-    }
-    this.socket.onerror = () => {
-      console.log('Server connection error, please check the server.');
-      this.dom.innerHTML = '<div style="color: red; ">API Error !</div>';
-    }
+    };
+    this.socket.onerror = (error) => {
+      console.log('Error: Server connection error, please check the server.', error);
+      this.dom.innerHTML = '<div style="color: red;">API Error!</div>';
+    };
     this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log('params', data)
-      this.start(data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received data from server', data);
+        this.start(data);
+      } catch (error) {
+        console.log('Error: Failed to parse server message', error);
+      }
     };
   }
 
@@ -162,7 +203,6 @@ class App {
       setInterval(() => this.sendHeartbeat(), 30000);
     });
   }
-
 }
 
 (function () {
